@@ -5,16 +5,15 @@ import struct
 import sys
 import logging
 import os
-from typing import Any, AnyStr
+from typing import Any, AnyStr, Final
 from lib import *
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
-Log = logging.getLogger(__name__)
+Log: Final = logging.getLogger(__name__)
 
 # Base class for two types of DNS Handler
 # implement common log operations and define interfaces
 class BaseRequestHandler(socketserver.BaseRequestHandler):
-
     def get_data(self) -> Any:
         raise NotImplementedError
 
@@ -22,9 +21,16 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
         raise NotImplementedError
 
     def handle(self) -> None:
-        now = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
-        print("\n\n%s request %s (%s %s):" % (self.__class__.__name__[:3], now, self.client_address[0],
-                                               self.client_address[1]))
+        now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")
+        print(
+            "\n\n%s request %s (%s %s):"
+            % (
+                self.__class__.__name__[:3],
+                now,
+                self.client_address[0],
+                self.client_address[1],
+            )
+        )
         try:
             data = self.get_data()
             print(len(data), data)  # repr(data).replace('\\x', '')[1:-1]
@@ -32,13 +38,13 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
         except Exception:
             traceback.print_exc(file=sys.stderr)
 
+
 # handle tcp request is necessary
 class TCPRequestHandler(BaseRequestHandler):
-
     def get_data(self) -> Any:
         data = self.request.recv(8192).strip()
         # unserialzed data
-        sz = struct.unpack('>H', data[:2])[0]
+        sz = struct.unpack(">H", data[:2])[0]
         if sz < len(data) - 2:
             raise Exception("Wrong size of TCP packet")
         elif sz > len(data) - 2:
@@ -47,12 +53,11 @@ class TCPRequestHandler(BaseRequestHandler):
 
     def send_data(self, data: AnyStr) -> Any:
         # serialize data
-        sz = struct.pack('>H', len(data))
+        sz = struct.pack(">H", len(data))
         return self.request.sendall(sz + data)
 
 
 class UDPRequestHandler(BaseRequestHandler):
-
     def get_data(self):
         return self.request[0].strip()
 
@@ -60,4 +65,4 @@ class UDPRequestHandler(BaseRequestHandler):
         return self.request[1].sendto(data, self.client_address)
 
 
-__all__ = ['TCPRequestHandler', 'UDPRequestHandler']
+__all__ = ["TCPRequestHandler", "UDPRequestHandler"]
