@@ -11,6 +11,8 @@ jobs:
         with:
           python-version: 3.8.4
           architecture: x64
+      - name: Checkout
+        uses: actions/checkout@v2  
       - name: Install black
         run: pip install black
       - name: Lint with black
