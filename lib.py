@@ -37,16 +37,7 @@ def dns_response(data: AnyStr, protocol_type: AnyStr) -> AnyStr:
     if query_result[0] != None:
         rdata = A(query_result[0])
         reply.add_answer(RR(rname=qname,rtype=getattr(QTYPE, 'A') ,rclass=IN, ttl=TTL, rdata=rdata))
-    """
-    for name, rrs in records.items():
-        if name == qn:
-            for rdata in rrs:   
-                rqt = rdata.__class__.__name__
-                if qt in ['*', rqt]:
-                    print(rqt)
-                    rdata1 = A('1.1.1.1')
-                    reply.add_answer(RR(rname=qname, rtype=getattr(QTYPE, rqt), rclass=1, ttl=TTL, rdata=rdata1))
-    """
+
     Log.info("---- Reply:%s\n", reply)
 
     return reply.pack()
