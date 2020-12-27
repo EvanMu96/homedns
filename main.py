@@ -34,7 +34,8 @@ def main():
         thread.start()
         LOG.info("%s server loop running in thread: %s" % (s.RequestHandlerClass.__name__[:3], thread.name))
 
-    map(lambda  s: _start(s), servers)  
+    for s in servers:
+        _start(s)
 
     try:
         while True:
