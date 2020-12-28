@@ -5,7 +5,7 @@ import struct
 import sys
 import logging
 import os
-from typing import Any, Final, ByteString
+from typing import Any, Final
 from lib import *
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))

@@ -13,6 +13,7 @@ LOG: Final = logging.getLogger(__name__)
 Server_TCP = socketserver.ThreadingTCPServer
 Server_UDP = socketserver.ThreadingUDPServer
 
+
 def main() -> Any:
     parser = argparse.ArgumentParser(description="Start a DNS implemented in Python.")
     parser = argparse.ArgumentParser(
