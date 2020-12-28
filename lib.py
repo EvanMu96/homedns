@@ -10,7 +10,7 @@ Log: Final = logging.getLogger(__name__)
 
 IN: Final[int] = 1
 
-# todo
+# imporvement
 def RecordFactory(qtype: str) -> Any:
     if qtype == "A":
         return A
@@ -52,14 +52,14 @@ def dns_response(data: AnyStr, protocol_type: AnyStr) -> AnyStr:
         query_result = query_db(qn, qtype)
 
     if query_result is not None:
-        for record in query_result:
-            rdata = RecordFactory(qtype)(record[0])
+        for value, TTL in query_result:
+            rdata = RecordFactory(qtype)(value)
             reply.add_answer(
                 RR(
                     rname=qname,
                     rtype=getattr(QTYPE, qtype),
                     rclass=IN,
-                    ttl=record[1],
+                    ttl=TTL,
                     rdata=rdata,
                 )
             )
