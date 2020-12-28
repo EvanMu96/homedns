@@ -2,7 +2,7 @@ import sqlite3
 import logging
 import os
 from typing import Optional, Any, AnyStr, Final
-from dnslib import *
+from dnslib import A, AAAA, RR, DNSRecord, QTYPE, DNSHeader
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
 Log: Final = logging.getLogger(__name__)
@@ -17,11 +17,11 @@ def RecordFactory(qtye: str) -> Any:
 
 
 # query record from sqlite file
-def query_db(qname: AnyStr, qtype: AnyStr) -> Optional[Any]:
+def query_db(qname: str, qtype: str) -> Optional[Any]:
     c = sqlite3.connect("dns_records.db").cursor()
     c.execute(
         """SELECT VALUE, TTL FROM RECORDS WHERE RECORD_TYPE='{}' AND DOMAIN='{}';""".format(
-            getattr(QTYPE, qtype), qname
+            int(getattr(QTYPE, qtype)), qname
         )
     )
     return c.fetchall()
@@ -45,17 +45,18 @@ def dns_response(data: AnyStr, protocol_type: AnyStr) -> AnyStr:
     else:
         query_result = query_db(qn, qtype)
 
-    for record in query_result:
-        rdata = RecordFactory(qtype)(record[0])
-        reply.add_answer(
-            RR(
-                rname=qname,
-                rtype=getattr(QTYPE, qtype),
-                rclass=IN,
-                ttl=record[1],
-                rdata=rdata,
+    if query_result is not None:
+        for record in query_result:
+            rdata = RecordFactory(qtype)(record[0])
+            reply.add_answer(
+                RR(
+                    rname=qname,
+                    rtype=getattr(QTYPE, qtype),
+                    rclass=IN,
+                    ttl=record[1],
+                    rdata=rdata,
+                )
             )
-        )
 
     Log.info("---- Reply:%s\n", reply)
 

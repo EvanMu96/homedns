@@ -5,7 +5,7 @@ import struct
 import sys
 import logging
 import os
-from typing import Any, AnyStr, Final
+from typing import Any, Final, ByteString
 from lib import *
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
@@ -17,7 +17,7 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
     def get_data(self) -> Any:
         raise NotImplementedError
 
-    def send_data(self, data: str) -> Any:
+    def send_data(self, data: bytes) -> Any:
         raise NotImplementedError
 
     def handle(self) -> None:
@@ -51,7 +51,7 @@ class TCPRequestHandler(BaseRequestHandler):
             raise Exception("Too big TCP packet")
         return data[2:]
 
-    def send_data(self, data: AnyStr) -> Any:
+    def send_data(self, data: bytes) -> Any:
         # serialize data
         sz = struct.pack(">H", len(data))
         return self.request.sendall(sz + data)
@@ -61,7 +61,7 @@ class UDPRequestHandler(BaseRequestHandler):
     def get_data(self):
         return self.request[0].strip()
 
-    def send_data(self, data: str) -> Any:
+    def send_data(self, data: bytes) -> Any:
         return self.request[1].sendto(data, self.client_address)
 
 

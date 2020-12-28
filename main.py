@@ -4,12 +4,14 @@ import threading
 import socketserver
 import logging
 import os
-from typing import Any, Final
+from typing import Any, Final, List, Union
 from handlers import *
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
 LOG: Final = logging.getLogger(__name__)
 
+Server_TCP = socketserver.ThreadingTCPServer
+Server_UDP = socketserver.ThreadingUDPServer
 
 def main() -> Any:
     parser = argparse.ArgumentParser(description="Start a DNS implemented in Python.")
@@ -22,10 +24,10 @@ def main() -> Any:
 
     LOG.info("starting nameserver... %s", args.port)
 
-    servers = []
+    servers: List[Union[Server_TCP, Server_UDP]] = []
 
-    servers.append(socketserver.ThreadingUDPServer(("", args.port), UDPRequestHandler))
-    servers.append(socketserver.ThreadingTCPServer(("", args.port), TCPRequestHandler))
+    servers.append(Server_UDP(("", args.port), UDPRequestHandler))
+    servers.append(Server_TCP(("", args.port), TCPRequestHandler))
 
     def _start(s):
         thread = threading.Thread(target=s.serve_forever)
