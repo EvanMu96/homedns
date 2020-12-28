@@ -24,13 +24,16 @@ def RecordFactory(qtype: str) -> Any:
 
 # query record from sqlite file
 def query_db(qname: str, qtype: str) -> Optional[Any]:
-    c = sqlite3.connect("dns_records.db").cursor()
+    conn = sqlite3.connect("dns_records.db")
+    c = conn.cursor()
     c.execute(
         """SELECT VALUE, TTL FROM RECORDS WHERE RECORD_TYPE='{}' AND DOMAIN='{}';""".format(
             int(getattr(QTYPE, qtype)), qname
         )
     )
-    return c.fetchall()
+    ret = c.fetchall()
+    conn.close()
+    return ret
 
 
 # make dns response
