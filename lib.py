@@ -1,7 +1,7 @@
 import sqlite3
 import logging
 import os
-from typing import Optional, Any, AnyStr, Final
+from typing import Optional, Any, AnyStr, Final, List
 from dnslib import A, AAAA, CNAME, RR, DNSRecord, QTYPE, DNSHeader
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
@@ -23,13 +23,14 @@ def RecordFactory(qtype: str) -> Any:
 
 
 # query record from sqlite file
-def query_db(qname: str, qtype: str) -> Optional[Any]:
+def query_db(qname: str, qtype: str) -> Optional[List[Any]]:
     conn = sqlite3.connect("dns_records.db")
     c = conn.cursor()
+    query_tuple = (int(getattr(QTYPE, qtype)), qname)
+
     c.execute(
-        """SELECT VALUE, TTL FROM RECORDS WHERE RECORD_TYPE='{}' AND DOMAIN='{}';""".format(
-            int(getattr(QTYPE, qtype)), qname
-        )
+        """SELECT VALUE, TTL FROM RECORDS WHERE RECORD_TYPE=? AND DOMAIN=?;""",
+        query_tuple,
     )
     ret = c.fetchall()
     conn.close()
