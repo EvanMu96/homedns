@@ -2,7 +2,7 @@ import sqlite3
 import logging
 import os
 from typing import Optional, Any, AnyStr, Final
-from dnslib import A, RR, DNSRecord, QTYPE, DNSHeader
+from dnslib import A, AAAA, CNAME, RR, DNSRecord, QTYPE, DNSHeader
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
 Log: Final = logging.getLogger(__name__)
@@ -11,9 +11,15 @@ Log: Final = logging.getLogger(__name__)
 IN: Final[int] = 1
 
 # todo
-def RecordFactory(qtye: str) -> Any:
-    if qtye == "A":
+def RecordFactory(qtype: str) -> Any:
+    if qtype == "A":
         return A
+    elif qtype == "CNAME":
+        return CNAME
+    elif qtype == "AAAA":
+        return AAAA
+    else:
+        Log.error("not implemented query type")
 
 
 # query record from sqlite file
