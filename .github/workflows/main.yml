@@ -13,8 +13,8 @@ jobs:
           architecture: x64
       - name: Checkout
         uses: actions/checkout@v2  
-      - name: Install black
-        run: pip install black
+      - name: Install black and isort
+        run: pip install black && pip install isort
       - name: Lint with black
         run: ./scripts/lint.sh
       - name: Install flake8
