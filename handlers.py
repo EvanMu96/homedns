@@ -1,11 +1,12 @@
-import traceback
-import socketserver
 import datetime
-import struct
-import sys
 import logging
 import os
+import socketserver
+import struct
+import sys
+import traceback
 from typing import Any, Final
+
 from lib import *
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))

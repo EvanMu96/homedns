@@ -1,8 +1,9 @@
-import sqlite3
 import logging
 import os
-from typing import Optional, Any, AnyStr, Final, List
-from dnslib import A, AAAA, CNAME, RR, DNSRecord, QTYPE, DNSHeader
+import sqlite3
+from typing import Any, AnyStr, Final, List, Optional
+
+from dnslib import AAAA, CNAME, QTYPE, RR, A, DNSHeader, DNSRecord
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
 Log: Final = logging.getLogger(__name__)
