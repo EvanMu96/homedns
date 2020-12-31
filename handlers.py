@@ -1,12 +1,14 @@
 import datetime
 import logging
 import os
+import socket
 import socketserver
 import struct
 import sys
 import traceback
 from typing import Any, Final
 
+from config import roots
 from lib import *
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
@@ -21,9 +23,12 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
     def send_data(self, data: bytes) -> Any:
         raise NotImplementedError
 
+    def forward_roots(self, data: bytes) -> Any:
+        raise NotImplementedError
+
     def handle(self) -> None:
         now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")
-        print(
+        Log.info(
             "\n\n%s request %s (%s %s):"
             % (
                 self.__class__.__name__[:3],
@@ -34,8 +39,15 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
         )
         try:
             data = self.get_data()
-            print(len(data), data)  # repr(data).replace('\\x', '')[1:-1]
-            self.send_data(dns_response(data, (self.__class__.__name__[:3]).lower()))
+            Log.info("Data Length: %d", len(data))
+            ret = dns_response(data, (self.__class__.__name__[:3]).lower())
+            # to-do forward to root hints
+            if ret is None:
+                Log.info("Need forwarding")
+                self.forward_roots(data)
+            else:
+                Log.info("Find record in local db")
+                self.send_data(ret)
         except Exception:
             traceback.print_exc(file=sys.stderr)
 
@@ -44,7 +56,6 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
 class TCPRequestHandler(BaseRequestHandler):
     def get_data(self) -> Any:
         data = self.request.recv(8192).strip()
-        # unserialzed data
         sz = struct.unpack(">H", data[:2])[0]
         if sz < len(data) - 2:
             raise Exception("Wrong size of TCP packet")
@@ -53,9 +64,27 @@ class TCPRequestHandler(BaseRequestHandler):
         return data[2:]
 
     def send_data(self, data: bytes) -> Any:
-        # serialize data
         sz = struct.pack(">H", len(data))
         return self.request.sendall(sz + data)
+
+    def forward_roots(self, data: bytes) -> Any:
+        recv = None
+        for ip, port in roots:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            if port is None:
+                port = 53
+            try:
+                sock.connect((ip, port))
+            except OSError as e:
+                Log.error(e)
+                sock.close()
+                sock = None
+                continue
+            sz = struct.pack(">H", len(data))
+            sock.sendall(sz + data)
+            recv = sock.recv(8192)
+            break
+        self.request.sendall(recv)
 
 
 class UDPRequestHandler(BaseRequestHandler):
@@ -64,6 +93,20 @@ class UDPRequestHandler(BaseRequestHandler):
 
     def send_data(self, data: bytes) -> Any:
         return self.request[1].sendto(data, self.client_address)
+
+    def forward_roots(self, data: bytes) -> Any:
+        recv = None
+        for ip, port in roots:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            if port is None:
+                port = 53
+            Log.info("%s, destip: %s, dest port: %d", data, ip, port)
+            sock.sendto(data, (ip, port))
+            recv = sock.recv(8192)
+            Log.info(recv)
+            if recv:
+                break
+        self.request[1].sendto(recv, self.client_address)
 
 
 __all__ = ["TCPRequestHandler", "UDPRequestHandler"]
