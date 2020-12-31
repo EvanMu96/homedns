@@ -6,7 +6,7 @@ import socketserver
 import struct
 import sys
 import traceback
-from typing import Any, Final, Optional
+from typing import Any, Final
 
 from config import roots
 from lib import *
