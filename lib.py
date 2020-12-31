@@ -24,7 +24,7 @@ def RecordFactory(qtype: str) -> Any:
 
 
 # query record from sqlite file
-def query_db(qname: str, qtype: str) -> Optional[List[Any]]:
+def query_db(qname: str, qtype: str) -> List[Any]:
     conn = sqlite3.connect("dns_records.db")
     c = conn.cursor()
     query_tuple = (int(getattr(QTYPE, qtype)), qname)
@@ -39,11 +39,11 @@ def query_db(qname: str, qtype: str) -> Optional[List[Any]]:
 
 
 # make dns response
-def dns_response(data: AnyStr, protocol_type: AnyStr) -> AnyStr:
+def dns_response(data: AnyStr, protocol_type: AnyStr) -> Optional[Any]:
     # decode a DNS packet
     request = DNSRecord.parse(data)
 
-    Log.info("starting response: %s", request)
+    Log.debug("starting response: %s", request)
     # qr is a bit for distingushing queries(0) and reponses(1)
     reply = DNSRecord(DNSHeader(id=request.header.id, qr=1, aa=1, ra=1), q=request.q)
 
@@ -56,7 +56,8 @@ def dns_response(data: AnyStr, protocol_type: AnyStr) -> AnyStr:
     else:
         query_result = query_db(qn, qtype)
 
-    if query_result is not None:
+    # hit
+    if len(query_result) != 0:
         for value, TTL in query_result:
             rdata = RecordFactory(qtype)(value)
             reply.add_answer(
@@ -68,8 +69,10 @@ def dns_response(data: AnyStr, protocol_type: AnyStr) -> AnyStr:
                     rdata=rdata,
                 )
             )
-
-    Log.info("---- Reply:%s\n", reply)
+    # fail
+    else:
+        return None
+    Log.debug("Reply:%s\n", reply)
 
     return reply.pack()
 

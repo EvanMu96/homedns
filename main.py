@@ -36,8 +36,9 @@ def main() -> Any:
         thread.daemon = True
         thread.start()
         LOG.info(
-            "%s server loop running in thread: %s"
-            % (s.RequestHandlerClass.__name__[:3], thread.name)
+            "%s server loop running in thread: %s",
+            s.RequestHandlerClass.__name__[:3],
+            thread.name,
         )
 
     for s in servers:
@@ -50,7 +51,7 @@ def main() -> Any:
         pass
     finally:
         map(lambda s: s.shutdown(), servers)
-        LOG.info("Bye bye")
+        LOG.info("Shutting down servers. Bye bye")
 
 
 if __name__ == "__main__":
