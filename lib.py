@@ -43,7 +43,7 @@ def dns_response(data: AnyStr, protocol_type: AnyStr) -> Optional[Any]:
     # decode a DNS packet
     request = DNSRecord.parse(data)
 
-    Log.info("starting response: %s", request)
+    Log.debug("starting response: %s", request)
     # qr is a bit for distingushing queries(0) and reponses(1)
     reply = DNSRecord(DNSHeader(id=request.header.id, qr=1, aa=1, ra=1), q=request.q)
 
@@ -72,7 +72,7 @@ def dns_response(data: AnyStr, protocol_type: AnyStr) -> Optional[Any]:
     # fail
     else:
         return None
-    Log.info("---- Reply:%s\n", reply)
+    Log.debug("Reply:%s\n", reply)
 
     return reply.pack()
 

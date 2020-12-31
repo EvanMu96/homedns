@@ -39,7 +39,6 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
         )
         try:
             data = self.get_data()
-            Log.info("Data Length: %d", len(data))
             ret = dns_response(data, (self.__class__.__name__[:3]).lower())
             # to-do forward to root hints
             if ret is None:
@@ -84,6 +83,7 @@ class TCPRequestHandler(BaseRequestHandler):
             sock.sendall(sz + data)
             recv = sock.recv(8192)
             break
+        Log.debug(recv)
         self.request.sendall(recv)
 
 
@@ -100,12 +100,12 @@ class UDPRequestHandler(BaseRequestHandler):
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             if port is None:
                 port = 53
-            Log.info("%s, destip: %s, dest port: %d", data, ip, port)
+            Log.info("forward query to destip: %s, dest port: %d", ip, port)
             sock.sendto(data, (ip, port))
             recv = sock.recv(8192)
-            Log.info(recv)
             if recv:
                 break
+        Log.debug(recv)
         self.request[1].sendto(recv, self.client_address)
 
 
