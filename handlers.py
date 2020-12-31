@@ -6,7 +6,7 @@ import socketserver
 import struct
 import sys
 import traceback
-from typing import Any, Final
+from typing import Any, Final, Optional
 
 from config import roots
 from lib import *
@@ -77,7 +77,6 @@ class TCPRequestHandler(BaseRequestHandler):
             except OSError as e:
                 Log.error(e)
                 sock.close()
-                sock = None
                 continue
             sz = struct.pack(">H", len(data))
             sock.sendall(sz + data)
