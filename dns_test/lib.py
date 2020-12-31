@@ -5,6 +5,8 @@ from typing import Any, AnyStr, Final, List, Optional
 
 from dnslib import AAAA, CNAME, QTYPE, RR, A, DNSHeader, DNSRecord
 
+from .config import db_path
+
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
 Log: Final = logging.getLogger(__name__)
 
@@ -25,7 +27,7 @@ def RecordFactory(qtype: str) -> Any:
 
 # query record from sqlite file
 def query_db(qname: str, qtype: str) -> List[Any]:
-    conn = sqlite3.connect("dns_records.db")
+    conn = sqlite3.connect(db_path)
     c = conn.cursor()
     query_tuple = (int(getattr(QTYPE, qtype)), qname)
 

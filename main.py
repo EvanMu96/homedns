@@ -6,7 +6,7 @@ import threading
 import time
 from typing import Any, Final, List, Union
 
-from handlers import *
+from dns_test.handlers import TCPRequestHandler, UDPRequestHandler
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
 LOG: Final = logging.getLogger(__name__)

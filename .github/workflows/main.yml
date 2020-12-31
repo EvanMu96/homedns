@@ -26,4 +26,4 @@ jobs:
       - name: Install mypy
         run: pip install mypy
       - name: Check types with mypy
-        run: mypy *.py
+        run: mypy .

@@ -8,8 +8,8 @@ import sys
 import traceback
 from typing import Any, Final
 
-from config import roots
-from lib import *
+from .config import roots
+from .lib import *
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
 Log: Final = logging.getLogger(__name__)
