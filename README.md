@@ -1,6 +1,7 @@
 ## Intro
-A toy DNS server suppport local record and query forwarding. ![flake8](https://github.com/EvanMu96/dns-test/workflows/Lint/badge.svg)  
-supported query type
+![flake8](https://github.com/EvanMu96/dns_test/workflows/Lint/badge.svg)  
+A toy DNS server suppport local record and query forwarding.  
+Now it supports a few query types
 - A
 - AAAA
 - CNAME  
