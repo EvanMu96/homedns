@@ -52,6 +52,7 @@ def main() -> Any:
     finally:
         map(lambda s: s.shutdown(), servers)
         LOG.info("Shutting down servers. Bye bye")
+        exit(0)
 
 
 if __name__ == "__main__":
