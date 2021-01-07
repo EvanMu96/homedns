@@ -6,7 +6,7 @@ import threading
 import time
 from typing import Any, Final, List, Union
 
-from dns_test.handlers import TCPRequestHandler, UDPRequestHandler
+from dns_test.queryhandlers import TCPRequestHandler, UDPRequestHandler
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
 LOG: Final = logging.getLogger(__name__)
@@ -16,11 +16,13 @@ Server_UDP = socketserver.ThreadingUDPServer
 
 
 def main() -> Any:
-    parser = argparse.ArgumentParser(description="Start a DNS implemented in Python.")
+    parser = argparse.ArgumentParser(
+        description="Start a DNS Server implemented in Python."
+    )
     parser = argparse.ArgumentParser(
         description="Start a DNS implemented in Python. Usually DNSs use UDP on port 53."
     )
-    parser.add_argument("--port", default=5053, type=int, help="The port to listen on.")
+    parser.add_argument("--port", default=5153, type=int, help="The port to listen on.")
 
     args = parser.parse_args()
 

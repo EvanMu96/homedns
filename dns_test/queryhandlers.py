@@ -6,9 +6,9 @@ import socketserver
 import struct
 import sys
 import traceback
-from typing import Any, Final
+from typing import Any, Final, List
 
-from .config import roots
+from .config import client_denylist, roots
 from .lib import *
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
@@ -37,18 +37,38 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
                 self.client_address[1],
             )
         )
+        denylist = self.get_denied_types(self.client_address[0])
+        Log.debug(denylist)
         try:
             data = self.get_data()
-            ret = dns_response(data, (self.__class__.__name__[:3]).lower())
+            retcode, retdata = dns_response(
+                data, (self.__class__.__name__[:3]).lower(), denylist
+            )
             # to-do forward to root hints
-            if ret is None:
+            Log.debug(retcode)
+
+            if retcode == 0:
+                if retdata is not None:
+                    Log.info("Find record in local db")
+                    self.send_data(retdata)
+            elif retcode == 1:
                 Log.info("Need forwarding")
                 self.forward_roots(data)
+            elif retcode == 2:
+                Log.info("blocked.")
+                return
             else:
-                Log.info("Find record in local db")
-                self.send_data(ret)
+                Log.error("undefined error code ")
         except Exception:
             traceback.print_exc(file=sys.stderr)
+
+    def get_denied_types(self, search_ip: str) -> List:
+        ret = []
+        for ip, type in client_denylist:
+            Log.debug("ip: %s, search_ip: %s", ip, search_ip)
+            if ip == search_ip:
+                ret.append(type)
+        return ret
 
 
 # handle tcp request is necessary
