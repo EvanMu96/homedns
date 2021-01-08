@@ -3,7 +3,7 @@ import os
 import sqlite3
 from typing import Any, AnyStr, Final, List, Optional, Tuple
 
-from dnslib import AAAA, CNAME, QTYPE, RR, A, DNSHeader, DNSRecord
+from dnslib import AAAA, CNAME, QTYPE, RR, A, DNSHeader, DNSRecord, NS, MX
 
 from .config import db_path
 
@@ -15,13 +15,19 @@ IN: Final[int] = 1
 RESP_OK, RESP_FWD, RESP_BLK = 0, 1, 2
 
 # imporvement
-def RecordFactory(qtype: str) -> Any:
+def RecordFactory(qtype: str, data: str) -> Any:
     if qtype == "A":
-        return A
+        return A(data)
     elif qtype == "CNAME":
-        return CNAME
+        return CNAME(data)
     elif qtype == "AAAA":
-        return AAAA
+        return AAAA(data)
+    elif qtype == "NS":
+        return NS(data)
+    elif qtype == "MX":
+        pref, entry = data.split()
+        print(pref, entry)
+        return MX(preference=int(pref), label=entry)
     else:
         Log.error("not implemented query type")
 
@@ -72,7 +78,7 @@ def dns_response(
     # hit
     if len(query_result) != 0:
         for value, TTL in query_result:
-            rdata = RecordFactory(qtype)(value)
+            rdata = RecordFactory(qtype, value)
             reply.add_answer(
                 RR(
                     rname=qname,
@@ -80,6 +86,7 @@ def dns_response(
                     rclass=IN,
                     ttl=TTL,
                     rdata=rdata,
+                    
                 )
             )
     # need forward
