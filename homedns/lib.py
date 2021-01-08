@@ -3,7 +3,7 @@ import os
 import sqlite3
 from typing import Any, AnyStr, Final, List, Optional, Tuple
 
-from dnslib import AAAA, CNAME, QTYPE, RR, A, DNSHeader, DNSRecord, NS, MX
+from dnslib import AAAA, CNAME, MX, NS, QTYPE, RR, A, DNSHeader, DNSRecord
 
 from .config import db_path
 
@@ -86,7 +86,6 @@ def dns_response(
                     rclass=IN,
                     ttl=TTL,
                     rdata=rdata,
-                    
                 )
             )
     # need forward

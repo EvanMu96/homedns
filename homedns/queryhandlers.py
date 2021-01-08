@@ -44,9 +44,8 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
             retcode, retdata = dns_response(
                 data, (self.__class__.__name__[:3]).lower(), denylist
             )
-            # to-do forward to root hints
-            Log.debug(retcode)
 
+            Log.debug(retcode)
             if retcode == 0:
                 if retdata is not None:
                     Log.info("Find record in local db")
