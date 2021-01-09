@@ -8,10 +8,10 @@ import sys
 import traceback
 from typing import Any, Final, List
 
-from .config import client_denylist, roots
+from .confschema import Config
 from .lib import *
 
-logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
+logging.basicConfig(level=os.environ.get("LOGLEVEL", "DEBUG"))
 Log: Final = logging.getLogger(__name__)
 
 # Base class for two types of DNS Handler
@@ -42,7 +42,10 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
         try:
             data = self.get_data()
             retcode, retdata = dns_response(
-                data, (self.__class__.__name__[:3]).lower(), denylist
+                data,
+                self.server.dns_config.db_path,
+                (self.__class__.__name__[:3]).lower(),
+                denylist,
             )
 
             Log.debug(retcode)
@@ -63,7 +66,7 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
 
     def get_denied_types(self, search_ip: str) -> List:
         ret = []
-        for ip, type in client_denylist:
+        for ip, type in self.server.dns_config.client_denylist:
             Log.debug("ip: %s, search_ip: %s", ip, search_ip)
             if ip == search_ip:
                 ret.append(type)
@@ -87,7 +90,7 @@ class TCPRequestHandler(BaseRequestHandler):
 
     def forward_roots(self, data: bytes) -> Any:
         recv = None
-        for ip, port in roots:
+        for ip, port in self.server.dns_config.roots:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             if port is None:
                 port = 53
@@ -114,7 +117,7 @@ class UDPRequestHandler(BaseRequestHandler):
 
     def forward_roots(self, data: bytes) -> Any:
         recv = None
-        for ip, port in roots:
+        for ip, port in self.server.dns_config.roots:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             if port is None:
                 port = 53

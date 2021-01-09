@@ -5,8 +5,6 @@ from typing import Any, AnyStr, Final, List, Optional, Tuple
 
 from dnslib import AAAA, CNAME, MX, NS, QTYPE, RR, A, DNSHeader, DNSRecord
 
-from .config import db_path
-
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
 Log: Final = logging.getLogger(__name__)
 
@@ -33,7 +31,7 @@ def RecordFactory(qtype: str, data: str) -> Any:
 
 
 # query record from sqlite file
-def query_db(qname: str, qtype: str) -> List[Any]:
+def query_db(qname: str, qtype: str, db_path: str) -> List[Any]:
     Log.debug("querying from databases")
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
@@ -54,7 +52,7 @@ def query_db(qname: str, qtype: str) -> List[Any]:
 # 2: blocked
 # make dns response
 def dns_response(
-    data: AnyStr, protocol_type: AnyStr, deny_types: List
+    data: AnyStr, db_path: str, protocol_type: AnyStr, deny_types: List
 ) -> Tuple[int, Optional[AnyStr]]:
     # decode a DNS packet
     request = DNSRecord.parse(data)
@@ -71,9 +69,9 @@ def dns_response(
     reply = DNSRecord(DNSHeader(id=request.header.id, qr=1, aa=1, ra=1), q=request.q)
 
     if qn.endswith("."):
-        query_result = query_db(qn.rstrip("."), qtype)
+        query_result = query_db(qn.rstrip("."), qtype, db_path)
     else:
-        query_result = query_db(qn, qtype)
+        query_result = query_db(qn, qtype, db_path)
 
     # hit
     if len(query_result) != 0:
