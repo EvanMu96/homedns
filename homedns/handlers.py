@@ -9,6 +9,7 @@ import traceback
 from typing import Any, Final, List
 
 from .lib import *
+from .utils import set_iterative_timeout
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "DEBUG"))
 Log: Final = logging.getLogger(__name__)
@@ -96,18 +97,21 @@ class TCPRequestHandler(BaseRequestHandler):
         recv = None
         for ip, port in roots:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            set_iterative_timeout(sock)
             if port is None:
                 port = 53
+            Log.info("forward query to destip: %s, dest port: %d", ip, port)
             try:
                 sock.connect((ip, port))
             except OSError as e:
                 Log.error(e)
                 sock.close()
                 continue
-            sz = struct.pack(">H", len(data))
-            sock.sendall(sz + data)
-            recv = sock.recv(8192)
-            break
+            else:
+                sz = struct.pack(">H", len(data))
+                sock.sendall(sz + data)
+                recv = sock.recv(8192)
+                break
         Log.debug(recv)
         self.request.sendall(recv)
 
@@ -124,12 +128,17 @@ class UDPRequestHandler(BaseRequestHandler):
         recv = None
         for ip, port in roots:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            set_iterative_timeout(sock)
             if port is None:
                 port = 53
             Log.info("forward query to destip: %s, dest port: %d", ip, port)
-            sock.sendto(data, (ip, port))
-            recv = sock.recv(8192)
-            if recv:
+            try:
+                sock.sendto(data, (ip, port))
+                recv = sock.recv(8192)
+            except OSError as e:
+                Log.debug(e)
+                continue
+            else:
                 break
         Log.debug(recv)
         self.request[1].sendto(recv, self.client_address)
