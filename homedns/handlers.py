@@ -8,7 +8,6 @@ import sys
 import traceback
 from typing import Any, Final, List
 
-from .confschema import Config
 from .lib import *
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "DEBUG"))
@@ -27,6 +26,9 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
         raise NotImplementedError
 
     def handle(self) -> None:
+        # ignore dynamic assigned attribute
+        config = self.server.dns_config  # type: ignore
+
         now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")
         Log.info(
             "\n\n%s request %s (%s %s):"
@@ -43,7 +45,7 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
             data = self.get_data()
             retcode, retdata = dns_response(
                 data,
-                self.server.dns_config.db_path,
+                config.db_path,
                 (self.__class__.__name__[:3]).lower(),
                 denylist,
             )
@@ -65,8 +67,9 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
             traceback.print_exc(file=sys.stderr)
 
     def get_denied_types(self, search_ip: str) -> List:
+        client_denylist = self.server.dns_config.client_denylist  # type: ignore
         ret = []
-        for ip, type in self.server.dns_config.client_denylist:
+        for ip, type in client_denylist:
             Log.debug("ip: %s, search_ip: %s", ip, search_ip)
             if ip == search_ip:
                 ret.append(type)
@@ -89,8 +92,9 @@ class TCPRequestHandler(BaseRequestHandler):
         return self.request.sendall(sz + data)
 
     def forward_roots(self, data: bytes) -> Any:
+        roots = self.server.dns_config.roots  # type: ignore
         recv = None
-        for ip, port in self.server.dns_config.roots:
+        for ip, port in roots:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             if port is None:
                 port = 53
@@ -116,8 +120,9 @@ class UDPRequestHandler(BaseRequestHandler):
         return self.request[1].sendto(data, self.client_address)
 
     def forward_roots(self, data: bytes) -> Any:
+        roots = self.server.dns_config.roots  # type: ignore
         recv = None
-        for ip, port in self.server.dns_config.roots:
+        for ip, port in roots:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             if port is None:
                 port = 53

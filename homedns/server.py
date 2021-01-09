@@ -12,7 +12,8 @@ Server_TCP = socketserver.ThreadingTCPServer
 Server_UDP = socketserver.ThreadingUDPServer
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
-LOG: Final = logging.getLogger(__name__)        
+LOG: Final = logging.getLogger(__name__)
+
 
 class HomeDNSServer:
     def __init__(self, port: int, config: Config) -> None:
