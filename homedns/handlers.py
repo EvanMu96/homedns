@@ -12,7 +12,7 @@ from .lib import *
 from .utils import set_iterative_timeout
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "DEBUG"))
-Log: Final = logging.getLogger(__name__)
+logger: Final = logging.getLogger(__name__)
 
 # Base class for two types of DNS Handler
 # implement common log operations and define interfaces
@@ -31,7 +31,7 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
         config = self.server.dns_config  # type: ignore
 
         now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")
-        Log.info(
+        logger.info(
             "\n\n%s request %s (%s %s):"
             % (
                 self.__class__.__name__[:3],
@@ -41,7 +41,7 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
             )
         )
         denylist = self.get_denied_types(self.client_address[0])
-        Log.debug(denylist)
+        logger.debug(denylist)
         try:
             data = self.get_data()
             retcode, retdata = dns_response(
@@ -51,19 +51,19 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
                 denylist,
             )
 
-            Log.debug(retcode)
+            logger.debug(retcode)
             if retcode == 0:
                 if retdata is not None:
-                    Log.info("Find record in local db")
+                    logger.info("Find record in local db")
                     self.send_data(retdata)
             elif retcode == 1:
-                Log.info("Need forwarding")
+                logger.info("Need forwarding")
                 self.forward_roots(data)
             elif retcode == 2:
-                Log.info("blocked.")
+                logger.info("blocked.")
                 return
             else:
-                Log.error("undefined error code ")
+                logger.error("undefined error code ")
         except Exception:
             traceback.print_exc(file=sys.stderr)
 
@@ -71,7 +71,7 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
         client_denylist = self.server.dns_config.client_denylist  # type: ignore
         ret = []
         for ip, type in client_denylist:
-            Log.debug("ip: %s, search_ip: %s", ip, search_ip)
+            logger.debug("ip: %s, search_ip: %s", ip, search_ip)
             if ip == search_ip:
                 ret.append(type)
         return ret
@@ -100,20 +100,20 @@ class TCPRequestHandler(BaseRequestHandler):
             set_iterative_timeout(sock)
             if port is None:
                 port = 53
-            Log.info("forward query to destip: %s, dest port: %d", ip, port)
+            logger.info("forward query to destip: %s, dest port: %d", ip, port)
             try:
                 sock.connect((ip, port))
             except OSError as e:
-                Log.error(e)
+                logger.error(e)
                 sock.close()
                 continue
             else:
                 sz = struct.pack(">H", len(data))
                 sock.sendall(sz + data)
                 recv = sock.recv(8192)
+                logger.debug(recv)
+                self.request.sendall(recv)
                 break
-        Log.debug(recv)
-        self.request.sendall(recv)
 
 
 class UDPRequestHandler(BaseRequestHandler):
@@ -131,17 +131,17 @@ class UDPRequestHandler(BaseRequestHandler):
             set_iterative_timeout(sock)
             if port is None:
                 port = 53
-            Log.info("forward query to destip: %s, dest port: %d", ip, port)
+            logger.info("forward query to destip: %s, dest port: %d", ip, port)
             try:
                 sock.sendto(data, (ip, port))
                 recv = sock.recv(8192)
             except OSError as e:
-                Log.debug(e)
+                logger.debug(e)
                 continue
             else:
+                logger.debug(recv)
+                self.request[1].sendto(recv, self.client_address)
                 break
-        Log.debug(recv)
-        self.request[1].sendto(recv, self.client_address)
 
 
 __all__ = ["TCPRequestHandler", "UDPRequestHandler"]
