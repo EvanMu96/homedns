@@ -1,22 +1,23 @@
 import datetime
 import logging
 import os
-import socket
 import socketserver
 import struct
 import sys
 import traceback
 from typing import Any, Final, List
 
-from .lib import *
-from .utils import set_iterative_timeout
+from .forward import DoTForwarder, TCPForwarder, UDPForwarder
+from .lib import dns_response
 
-logging.basicConfig(level=os.environ.get("LOGLEVEL", "DEBUG"))
+logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
 logger: Final = logging.getLogger(__name__)
 
 # Base class for two types of DNS Handler
 # implement common log operations and define interfaces
 class BaseRequestHandler(socketserver.BaseRequestHandler):
+    dot_fwder = DoTForwarder()
+
     def get_data(self) -> Any:
         raise NotImplementedError
 
@@ -79,9 +80,11 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
 
 # handle tcp request is necessary
 class TCPRequestHandler(BaseRequestHandler):
+    tcp_fwder = TCPForwarder()
+
     def get_data(self) -> Any:
         data = self.request.recv(8192).strip()
-        sz = struct.unpack(">H", data[:2])[0]
+        sz = struct.unpack("!H", data[:2])[0]
         if sz < len(data) - 2:
             raise Exception("Wrong size of TCP packet")
         elif sz > len(data) - 2:
@@ -89,34 +92,23 @@ class TCPRequestHandler(BaseRequestHandler):
         return data[2:]
 
     def send_data(self, data: bytes) -> Any:
-        sz = struct.pack(">H", len(data))
+        sz = struct.pack("!H", len(data))
         return self.request.sendall(sz + data)
 
     def forward_roots(self, data: bytes) -> Any:
-        roots = self.server.dns_config.roots  # type: ignore
+        config = self.server.dns_config  # type: ignore
         recv = None
-        for ip, port in roots:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            set_iterative_timeout(sock)
-            if port is None:
-                port = 53
-            logger.info("forward query to destip: %s, dest port: %d", ip, port)
-            try:
-                sock.connect((ip, port))
-            except OSError as e:
-                logger.error(e)
-                sock.close()
-                continue
-            else:
-                sz = struct.pack(">H", len(data))
-                sock.sendall(sz + data)
-                recv = sock.recv(8192)
-                logger.debug(recv)
-                self.request.sendall(recv)
-                break
+        if config.encrypted_roots:
+            recv = self.dot_fwder.forward(data, config, logger)
+        else:
+            recv = self.tcp_fwder.forward(data, config, logger)
+        if recv is not None:
+            self.request.sendall(recv)
 
 
 class UDPRequestHandler(BaseRequestHandler):
+    udp_fwder = UDPForwarder()
+
     def get_data(self):
         return self.request[0].strip()
 
@@ -124,24 +116,15 @@ class UDPRequestHandler(BaseRequestHandler):
         return self.request[1].sendto(data, self.client_address)
 
     def forward_roots(self, data: bytes) -> Any:
-        roots = self.server.dns_config.roots  # type: ignore
-        recv = None
-        for ip, port in roots:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            set_iterative_timeout(sock)
-            if port is None:
-                port = 53
-            logger.info("forward query to destip: %s, dest port: %d", ip, port)
-            try:
-                sock.sendto(data, (ip, port))
-                recv = sock.recv(8192)
-            except OSError as e:
-                logger.debug(e)
-                continue
-            else:
-                logger.debug(recv)
-                self.request[1].sendto(recv, self.client_address)
-                break
+        config = self.server.dns_config  # type: ignore
+        if config.encrypted_roots:
+            recv = self.dot_fwder.forward(data, config, logger)
+            if recv is not None:
+                recv = recv[2:]
+        else:
+            recv = self.udp_fwder.forward(data, config, logger)
+        if recv is not None:
+            self.request[1].sendto(recv, self.client_address)
 
 
 __all__ = ["TCPRequestHandler", "UDPRequestHandler"]
