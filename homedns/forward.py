@@ -1,19 +1,25 @@
+import base64
 import socket
 import ssl
 import struct
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
+import certifi
+import urllib3
+from dnslib import DNSRecord
+
 from .confschema import Config
+from .constants import iterative_timeout
 from .utils import get_default_port, set_iterative_timeout
 
 
 class Context:
-
+    http = urllib3.PoolManager(ca_certs=certifi.where())
     ctx = ssl.create_default_context()
     ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     ctx.verify_mode = ssl.CERT_REQUIRED
-    ctx.load_verify_locations("/etc/ssl/certs/ca-certificates.crt")
+    ctx.load_verify_locations(certifi.where())
 
 
 class ABCForwarder(ABC):
@@ -75,9 +81,10 @@ class DoTForwarder(ABCForwarder):
         roots = config.encrypted_roots
         if roots is None:
             return None
-        for ip, hostname, port in roots:
-            if port is None:
-                port = get_default_port("DoT")
+        for ip, hostname, etype in roots:
+            if etype != "DoT":
+                continue
+            port = get_default_port(etype)
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sslsock = ctx.wrap_socket(sock, server_hostname=hostname)
             logger.info("forward query to destip: %s, dest port: %d", ip, port)
@@ -99,4 +106,23 @@ class DoTForwarder(ABCForwarder):
 
 class DoHForwarder(ABCForwarder):
     def forward(self, data: bytes, config: Config, logger: Any) -> Optional[bytes]:
-        raise NotImplementedError
+        roots = config.encrypted_roots
+        if roots is None:
+            return None
+        query64 = base64.urlsafe_b64encode(data).decode("utf-8").rstrip("=")
+        http = Context.http
+        for ip, host, etype in roots:
+            if etype != "DoH":
+                continue
+            requestURL = "https://" + host + "/dns-query?" + "dns=" + query64
+            logger.debug("request URL: %s", requestURL)
+            recv = http.request(
+                "Get",
+                requestURL,
+                timeout=(iterative_timeout * 2),
+                headers={"content-type": "application/dns-message"},
+            ).data
+            logger.debug("%s", DNSRecord.parse(recv))
+            if recv:
+                break
+        return recv

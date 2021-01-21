@@ -7,7 +7,7 @@ import sys
 import traceback
 from typing import Any, Final, List
 
-from .forward import DoTForwarder, TCPForwarder, UDPForwarder
+from .forward import DoHForwarder, DoTForwarder, TCPForwarder, UDPForwarder
 from .lib import dns_response
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
@@ -17,6 +17,7 @@ logger: Final = logging.getLogger(__name__)
 # implement common log operations and define interfaces
 class BaseRequestHandler(socketserver.BaseRequestHandler):
     dot_fwder = DoTForwarder()
+    doh_fwder = DoHForwarder()
 
     def get_data(self) -> Any:
         raise NotImplementedError
@@ -99,7 +100,9 @@ class TCPRequestHandler(BaseRequestHandler):
         config = self.server.dns_config  # type: ignore
         recv = None
         if config.encrypted_roots:
-            recv = self.dot_fwder.forward(data, config, logger)
+            recv = self.doh_fwder.forward(data, config, logger)
+            if not recv:
+                recv = self.dot_fwder.forward(data, config, logger)
         else:
             recv = self.tcp_fwder.forward(data, config, logger)
         if recv is not None:
@@ -118,9 +121,11 @@ class UDPRequestHandler(BaseRequestHandler):
     def forward_roots(self, data: bytes) -> Any:
         config = self.server.dns_config  # type: ignore
         if config.encrypted_roots:
-            recv = self.dot_fwder.forward(data, config, logger)
-            if recv is not None:
-                recv = recv[2:]
+            recv = self.doh_fwder.forward(data, config, logger)
+            if not recv:
+                recv = self.dot_fwder.forward(data, config, logger)
+                if recv is not None:
+                    recv = recv[2:]
         else:
             recv = self.udp_fwder.forward(data, config, logger)
         if recv is not None:
