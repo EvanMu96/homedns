@@ -12,7 +12,7 @@ And it support normal plain-text DNS to DoT/DoH forwarding. You can use it as a 
 
 ## To do
 - [x] DoT
-- [ ] DoH
+- [x] DoH (GET Only)
 - [ ] Optimization
 
 ## Usage
@@ -41,7 +41,8 @@ config = Config(
     ],
     db_path="data/dns_records.db",
     # when encrypted_roots in set, only encrpted roots take effect not unencrpted roots.
-    # encrypted_roots=[("1.1.1.1", "cloudflare-dns.com", None)], 
+    # encrypted_roots=[("1.1.1.1", "cloudflare-dns.com", "DoT"),
+    #                   ("1.1.1.1", "cloudflare-dns.com", "DoH")], 
     client_denylist=[
         ("192.168.56.103", "*"),
         ("192.168.56.102", "A"),
