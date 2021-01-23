@@ -122,6 +122,8 @@ class DoHForwarder(ABCForwarder):
                 timeout=(iterative_timeout * 2),
                 headers={"content-type": "application/dns-message"},
             ).data
+            if not recv:
+                continue
             logger.debug("%s", DNSRecord.parse(recv))
             if recv:
                 break

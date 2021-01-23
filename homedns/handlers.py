@@ -46,6 +46,8 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
         logger.debug(denylist)
         try:
             data = self.get_data()
+            if not data:
+                return
             retcode, retdata = dns_response(
                 data,
                 config.db_path,
