@@ -8,7 +8,12 @@ Now it supports a few query types in local database.
 - NS
 - MX
   
-And it can forward arbitrary queries to root servers.
+And it support normal plain-text DNS to DoT/DoH forwarding. You can use it as a DoT/DoH proxy.
+
+## To do
+- [x] DoT
+- [ ] DoH
+- [ ] Optimization
 
 ## Usage
 Please sure that you have installed sqlite3, for Ubuntu users
@@ -35,6 +40,8 @@ config = Config(
         ("114.114.114.114", None),
     ],
     db_path="data/dns_records.db",
+    # when encrypted_roots in set, only encrpted roots take effect not unencrpted roots.
+    # encrypted_roots=[("1.1.1.1", "cloudflare-dns.com", None)], 
     client_denylist=[
         ("192.168.56.103", "*"),
         ("192.168.56.102", "A"),
@@ -47,4 +54,7 @@ python main.py --port=<port>
 ```
 
 ## Learn More About DNS
-[CLODFLARE DNS](https://www.cloudflare.com/zh-cn/learning/dns/dns-records/)
+[CLOUDFLARE DNS](https://www.cloudflare.com/zh-cn/learning/dns/dns-records/)  
+[RFC 1035](https://tools.ietf.org/html/rfc1035)  
+[CLOUDFLARE DoT/DoH](https://developers.google.com/speed/public-dns/docs/doh)  
+[Google DNS DoH](https://developers.google.com/speed/public-dns/docs/doh)  

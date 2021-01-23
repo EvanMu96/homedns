@@ -12,7 +12,7 @@ Server_TCP = socketserver.ThreadingTCPServer
 Server_UDP = socketserver.ThreadingUDPServer
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
-LOG: Final = logging.getLogger(__name__)
+logger: Final = logging.getLogger(__name__)
 
 
 class HomeDNSServer:
@@ -24,14 +24,14 @@ class HomeDNSServer:
         self.servers.append(Server_TCP(("", self.port), TCPRequestHandler))
 
     def run(self) -> Any:
-        LOG.info("HomeDNS server is starting at %s", self.port)
+        logger.info("HomeDNS server is starting at %s", self.port)
 
         def _start(s):
             s.dns_config = self.config
             thread = threading.Thread(target=s.serve_forever)
             thread.daemon = True
             thread.start()
-            LOG.info(
+            logger.info(
                 "%s server loop running in thread: %s",
                 s.RequestHandlerClass.__name__[:3],
                 thread.name,
@@ -46,6 +46,6 @@ class HomeDNSServer:
                 time.sleep(1)
         except KeyboardInterrupt:
             map(lambda s: s.shutdown(), self.servers)
-            LOG.info("Shutting down servers. Bye bye")
+            logger.info("Shutting down servers. Bye bye")
         finally:
             exit(0)
