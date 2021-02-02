@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 import base64
 import socket
 import ssl
 import struct
+import typing
+
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
@@ -9,10 +13,11 @@ import certifi
 import urllib3
 from dnslib import DNSRecord
 
-from .confschema import Config
 from .constants import iterative_timeout
 from .utils import get_default_port, set_iterative_timeout
 
+if typing.TYPE_CHECKING:
+    from .confschema import Config
 
 class Context:
     http = urllib3.PoolManager(ca_certs=certifi.where())

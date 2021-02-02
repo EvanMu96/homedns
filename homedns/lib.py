@@ -1,11 +1,10 @@
 import logging
 import os
 import sqlite3
+
 from collections import namedtuple
 from typing import Any, AnyStr, Final, List, Optional, Tuple
-
 from dnslib import QTYPE, RR, DNSHeader, DNSRecord
-
 from .constants import IN, RESP_BLK, RESP_FWD, RESP_OK
 from .utils import RecordFactory
 

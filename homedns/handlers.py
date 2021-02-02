@@ -5,8 +5,8 @@ import socketserver
 import struct
 import sys
 import traceback
-from typing import Any, Final, List
 
+from typing import Any, Final, List
 from .forward import DoHForwarder, DoTForwarder, TCPForwarder, UDPForwarder
 from .lib import dns_response
 
