@@ -1,14 +1,17 @@
-## Intro
+## HomeDNS
 ![flake8](https://github.com/EvanMu96/dns_test/workflows/Lint/badge.svg)  
 A toy DNS server suppport local record and query forwarding.  
-Now it supports a few query types in local database.
+Now it supports a few query types includes
 - A
 - AAAA
 - CNAME  
 - NS
 - MX
   
-And it support normal plain-text DNS to DoT/DoH forwarding. You can use it as a DoT/DoH proxy.
+And it support normal plain-text DNS to DoT/DoH forwarding. You can use it as a DoT/DoH proxy by configuration.
+
+## Requirements
+- Python 3.8 or above
 
 ## To do
 - [x] DoT
@@ -32,7 +35,7 @@ now you can insert your own entries by sqlite3
 sqlite3 data/dns_records.db < "INSERT INTO RECORDS ( DOMAIN, RECORD_TYPE, VALUE)
 VALUES ( 'test.com', 1, '1.1.1.1');"
 ```
-edit config instance in `main.py`, for example
+edit config instance in `dns_config.py`, for example
 ```Python 
 config = Config(
     roots=[
@@ -49,7 +52,7 @@ config = Config(
     ],
 )
 ```
-save and start DNS server, the default port is 8053
+After adding some DNS rule, you can start the DNS server. It listens on 8053 by default.
 ```bash
 python main.py --port=<port>
 ```

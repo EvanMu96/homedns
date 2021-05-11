@@ -5,8 +5,8 @@ import socketserver
 import struct
 import sys
 import traceback
-
 from typing import Any, Final, List
+
 from .forward import DoHForwarder, DoTForwarder, TCPForwarder, UDPForwarder
 from .lib import dns_response
 
@@ -29,7 +29,7 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
         raise NotImplementedError
 
     def handle(self) -> None:
-        # ignore dynamic assigned attribute
+        # for mypy: ignore dynamic assigned attribute
         config = self.server.dns_config  # type: ignore
 
         now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")
