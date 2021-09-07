@@ -1,6 +1,6 @@
 ## HomeDNS
 ![flake8](https://github.com/EvanMu96/dns_test/workflows/Lint/badge.svg)  
-A toy DNS server suppport local record and query forwarding.  
+A toy DNS server supports local record and query forwarding.  
 Now it supports a few query types includes
 - A
 - AAAA
@@ -8,7 +8,7 @@ Now it supports a few query types includes
 - NS
 - MX
   
-And it support normal plain-text DNS to DoT/DoH forwarding. You can use it as a DoT/DoH proxy by configuration.
+And it support normal plain-text DNS to DoT/DoH forwarding. You can use it as a DoT/DoH proxy with configuration.
 
 ## Requirements
 - Python 3.8 or above
@@ -19,7 +19,7 @@ And it support normal plain-text DNS to DoT/DoH forwarding. You can use it as a 
 - [ ] Optimization
 
 ## Usage
-Please sure that you have installed sqlite3, for Ubuntu users
+Please be sure that you have installed sqlite3, for Ubuntu users
 ```bash
 sudo apt-get install sqlite3
 ```
@@ -30,12 +30,12 @@ pip install -r requirements.txt
 # initialize database
 mkdir data && sqlite3 data/dns_records.db < scripts/schema.sql
 ```
-now you can insert your own entries by sqlite3
+now you can insert your own entries with sqlite3
 ```bash
 sqlite3 data/dns_records.db < "INSERT INTO RECORDS ( DOMAIN, RECORD_TYPE, VALUE)
 VALUES ( 'test.com', 1, '1.1.1.1');"
 ```
-edit config instance in `dns_config.py`, for example
+edit configuration `dns_config.py`, for example
 ```Python 
 config = Config(
     roots=[
