@@ -45,7 +45,9 @@ class HomeDNSServer:
                 # log interval
                 time.sleep(1)
         except KeyboardInterrupt:
-            map(lambda s: s.shutdown(), self.servers)
+            for server in self.servers:
+                server.shutdown()
+                server.server_close()
             logger.info("Shutting down servers. Bye bye")
         finally:
             exit(0)
